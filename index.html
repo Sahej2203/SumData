@@ -100,17 +100,19 @@ function extractNumbers() {
     const result = input
         .split('\n')
         .map(line => line.trim())
-        .filter(line => line.includes('='))
-        .map(line => line.split('=')[1]?.trim())
-        .filter(value => value && !isNaN(value))
-        .map(Number);
+        .map(line => {
+            // Extract the last number from the line
+            const match = line.match(/(\d+(\.\d+)?)\s*$/);
+            return match ? Number(match[1]) : null;
+        })
+        .filter(value => value !== null);
 
     const sum = result.reduce((acc, val) => acc + val, 0);
 
-    // show extracted numbers
+    // Show extracted numbers
     document.getElementById("output").textContent = result.join('\n');
 
-    // show total in separate box
+    // Show total
     document.getElementById("total").value = sum;
 }
 </script>
