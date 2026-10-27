@@ -1,121 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extract Values After =</title>
+    <title>Extract Numbers</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             background: #f4f6f8;
             margin: 0;
-            padding: 10px;
+            padding: 15px;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 22px;
+            margin: 0 0 15px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            max-width: 1200px;
+            margin: auto;
+            align-items: start;
         }
 
         .container {
             background: #fff;
             padding: 15px;
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            max-width: 500px;
-            margin: auto;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            min-width: 0;
         }
 
-        h2 {
-            text-align: center;
-            font-size: 18px;
+        label {
+            display: block;
+            margin: 12px 0 6px;
+            font-weight: bold;
         }
 
-        textarea {
+        textarea,
+        input {
             width: 100%;
-            min-height: 180px;
             padding: 10px;
             border-radius: 6px;
             border: 1px solid #ccc;
             font-size: 14px;
+        }
+
+        textarea {
+            height: 250px;
             resize: vertical;
-            box-sizing: border-box;
         }
 
         button {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 15px;
             padding: 12px;
             border: none;
             border-radius: 6px;
             background: #007bff;
             color: white;
             font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
         }
 
         pre {
             background: #f1f1f1;
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
-            margin-top: 15px;
+            margin-top: 10px;
             white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 200px;
+            overflow-wrap: anywhere;
+            max-height: 400px;
             overflow-y: auto;
+            min-height: 250px;
         }
 
         .total-box {
-            margin-top: 10px;
+            margin-top: 12px;
         }
 
         .total-box input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 6px;
             border: 2px solid #007bff;
             text-align: center;
             font-weight: bold;
             background: #e9f2ff;
+            font-size: 22px;
+        }
+
+        /* Mobile screen */
+        @media (max-width: 700px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            textarea {
+                height: 180px;
+            }
+
+            pre {
+                min-height: 150px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<div class="container">
-    <h2>Extract Numbers</h2>
 
-    <textarea id="inputData" placeholder="Paste WhatsApp data here..."></textarea>
+    <div class="main-container">
 
-    <button onclick="extractNumbers()">Extract</button>
+        <!-- LEFT SIDE: INPUTS -->
+        <div class="container">
 
-    <pre id="output">Output will appear here...</pre>
+            <label for="inputData">WhatsApp Data</label>
+            <textarea id="inputData" placeholder="Paste WhatsApp data here..."></textarea>
 
-    <div class="total-box">
-        <input type="text" id="total" placeholder="Total will appear here" readonly>
+            <label for="numberList">Number List</label>
+            <input type="text" id="numberList" placeholder="Example: 76-24-42-15-51-06-60-33-88-38-83">
+
+            <label for="rate">Amount Per Number (₹)</label>
+            <input type="number" id="rate" placeholder="Enter amount, e.g. 50" min="0" step="any">
+
+            <button onclick="extractNumbers()">Calculate Total</button>
+
+        </div>
+
+        <!-- RIGHT SIDE: RESULTS -->
+        <div class="container">
+
+            <label>Calculation Output</label>
+            <pre id="output">Output will appear here...</pre>
+
+            <label for="customAmount">Custom Amount (₹)</label>
+            <input type="number" id="customAmount" placeholder="Enter extra amount" step="any" value="0"
+                oninput="extractNumbers()">
+
+            <div class="total-box">
+                <label for="total">Grand Total</label>
+                <input type="text" id="total" placeholder="Total will appear here" readonly>
+            </div>
+
+        </div>
+
     </div>
-</div>
 
-<script>
-function extractNumbers() {
-    const input = document.getElementById("inputData").value;
+    <script>
 
-    const result = input
-        .split('\n')
-        .map(line => line.trim())
-        .map(line => {
-            // Extract the last number from the line
-            const match = line.match(/(\d+(\.\d+)?)\s*$/);
-            return match ? Number(match[1]) : null;
-        })
-        .filter(value => value !== null);
+        function extractNumbers() {
+            const input = document.getElementById("inputData").value;
+            const numberList = document.getElementById("numberList").value.trim();
+            const rateValue = document.getElementById("rate").value;
+            const customValue = document.getElementById("customAmount").value;
 
-    const sum = result.reduce((acc, val) => acc + val, 0);
+            const output = document.getElementById("output");
+            const totalInput = document.getElementById("total");
 
-    // Show extracted numbers
-    document.getElementById("output").textContent = result.join('\n');
+            let sum = 0;
+            const result = [];
 
-    // Show total
-    document.getElementById("total").value = sum;
-}
-</script>
+            // Calculate amounts from WhatsApp data
+            const lines = input.split(/\r?\n/);
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+
+                if (!line) {
+                    result.push("");
+                    continue;
+                }
+
+                const matches = line.matchAll(
+                    /(?:\.{2,}|-|=)\s*(\d+(?:\.\d+)?)/g
+                );
+
+                for (const match of matches) {
+                    const amount = Number(match[1]);
+                    sum += amount;
+                    result.push("₹" + amount);
+                }
+            }
+
+            // Calculate Number List
+            if (numberList) {
+                const numbers = numberList
+                    .split(/[-,\s]+/)
+                    .filter(n => /^\d+$/.test(n));
+
+                const rate = Number(rateValue);
+
+                if (numbers.length > 0 && rateValue !== "" && rate >= 0) {
+                    const listTotal = numbers.length * rate;
+                    sum += listTotal;
+
+                    result.push("");
+                    result.push("Number List:");
+                    result.push(numbers.join(", "));
+                    result.push("Count: " + numbers.length);
+                    result.push("Rate per Number: ₹" + rate);
+                    result.push("Number List Total: ₹" + listTotal);
+                } else {
+                    result.push("");
+                    result.push("Please enter a valid number list and rate.");
+                }
+            }
+
+            // Add Custom Amount
+            const customAmount = customValue.trim() === ""
+                ? 0
+                : Number(customValue);
+
+            if (Number.isFinite(customAmount)) {
+                sum += customAmount;
+                result.push("");
+                result.push("Custom Amount: ₹" + customAmount);
+            }
+
+            // Display Grand Total
+            output.textContent = result.join("\n");
+            totalInput.value = "₹" + sum;
+        }
+
+    </script>
 
 </body>
+
 </html>
