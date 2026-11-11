@@ -184,7 +184,7 @@
                 }
 
                 const matches = line.matchAll(
-                    /(?:\.{2,}|-|=)\s*(\d+(?:\.\d+)?)/g
+                    /(?:\.{2,}|-|=|\*)\s*(\d+(?:\.\d+)?)/g
                 );
 
                 for (const match of matches) {
