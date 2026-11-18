@@ -160,79 +160,91 @@
 
     <script>
 
-        function extractNumbers() {
-            const input = document.getElementById("inputData").value;
-            const numberList = document.getElementById("numberList").value.trim();
-            const rateValue = document.getElementById("rate").value;
-            const customValue = document.getElementById("customAmount").value;
 
-            const output = document.getElementById("output");
-            const totalInput = document.getElementById("total");
 
-            let sum = 0;
-            const result = [];
+function extractNumbers() {
+    const input = document.getElementById("inputData").value;
+    const numberList = document.getElementById("numberList").value.trim();
+    const rateValue = document.getElementById("rate").value;
+    const customValue = document.getElementById("customAmount").value;
 
-            // Calculate amounts from WhatsApp data
-            const lines = input.split(/\r?\n/);
+    const output = document.getElementById("output");
+    const totalInput = document.getElementById("total");
 
-            for (const rawLine of lines) {
-                const line = rawLine.trim();
+    let sum = 0;
+    const result = [];
 
-                if (!line) {
-                    result.push("");
-                    continue;
-                }
+    // Calculate amounts from WhatsApp data
+    const lines = input.split(/\r?\n/);
 
-                const matches = line.matchAll(
-                    /(?:\.{2,}|-|=|\*)\s*(\d+(?:\.\d+)?)/g
-                );
+    for (const rawLine of lines) {
+        const line = rawLine.trim();
 
-                for (const match of matches) {
-                    const amount = Number(match[1]);
-                    sum += amount;
-                    result.push("₹" + amount);
-                }
-            }
-
-            // Calculate Number List
-            if (numberList) {
-                const numbers = numberList
-                    .split(/[-,\s]+/)
-                    .filter(n => /^\d+$/.test(n));
-
-                const rate = Number(rateValue);
-
-                if (numbers.length > 0 && rateValue !== "" && rate >= 0) {
-                    const listTotal = numbers.length * rate;
-                    sum += listTotal;
-
-                    result.push("");
-                    result.push("Number List:");
-                    result.push(numbers.join(", "));
-                    result.push("Count: " + numbers.length);
-                    result.push("Rate per Number: ₹" + rate);
-                    result.push("Number List Total: ₹" + listTotal);
-                } else {
-                    result.push("");
-                    result.push("Please enter a valid number list and rate.");
-                }
-            }
-
-            // Add Custom Amount
-            const customAmount = customValue.trim() === ""
-                ? 0
-                : Number(customValue);
-
-            if (Number.isFinite(customAmount)) {
-                sum += customAmount;
-                result.push("");
-                result.push("Custom Amount: ₹" + customAmount);
-            }
-
-            // Display Grand Total
-            output.textContent = result.join("\n");
-            totalInput.value = "₹" + sum;
+        if (!line) {
+            continue;
         }
+
+        // Special case: 36.25 should count as ₹20
+        if (/\b36\.25\b/.test(line)) {
+            sum += 20;
+            result.push("₹20");
+            continue;
+        }
+
+        // Support single or multiple *, -, = and two or more dots
+        const matches = line.matchAll(
+            /(?:\*+|\.{2,}|-+|=+)\s*₹?(\d+(?:\.\d+)?)/g
+        );
+
+        for (const match of matches) {
+            const amount = Number(match[1]);
+
+            sum += amount;
+            result.push("₹" + amount);
+        }
+    }
+
+    // Calculate Number List
+    if (numberList) {
+        const numbers = numberList
+            .split(/[-,\s]+/)
+            .filter(n => /^\d+$/.test(n));
+
+        const rate = Number(rateValue);
+
+        if (numbers.length > 0 && rateValue !== "" && rate >= 0) {
+            const listTotal = numbers.length * rate;
+
+            sum += listTotal;
+
+            result.push("");
+            result.push("Number List:");
+            result.push(numbers.join(", "));
+            result.push("Count: " + numbers.length);
+            result.push("Rate per Number: ₹" + rate);
+            result.push("Number List Total: ₹" + listTotal);
+        } else {
+            result.push("");
+            result.push("Please enter a valid number list and rate.");
+        }
+    }
+
+    // Add Custom Amount
+    const customAmount = customValue.trim() === ""
+        ? 0
+        : Number(customValue);
+
+    if (Number.isFinite(customAmount)) {
+        sum += customAmount;
+
+        result.push("");
+        result.push("Custom Amount: ₹" + customAmount);
+    }
+
+    // Display Grand Total
+    output.textContent = result.join("\n");
+    totalInput.value = "₹" + sum.toFixed(2);
+}
 
     </script>
 
